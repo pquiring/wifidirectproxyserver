@@ -34,6 +34,7 @@ public class WifiDirectService extends Service {
     private static int wifiClientCount = -1;
 
     private static ProxyServer proxyServer;
+    private static java.util.Timer timer;
 
     public static boolean isRunning() {
         return manager != null;
@@ -156,6 +157,10 @@ public class WifiDirectService extends Service {
         if (proxyServer != null) {
             proxyServer.close();
             proxyServer = null;
+            if (timer != null) {
+                timer.cancel();
+                timer = null;
+            }
         }
     }
 
@@ -169,6 +174,8 @@ public class WifiDirectService extends Service {
         if (proxyServer == null) {
             proxyServer = new ProxyServer();
             proxyServer.start();
+            timer = new java.util.Timer();
+            timer.schedule(new IdleRestarter(), 1000 * 60, 1000 * 60);
         }
     }
 
@@ -181,6 +188,17 @@ public class WifiDirectService extends Service {
         stopForeground(true);
         setStatus("Ready");
         stopGroup();
+    }
+
+    private class IdleRestarter extends java.util.TimerTask {
+        public void run() {
+            if (proxyServer == null) return;
+            long now = System.currentTimeMillis();
+            long last = ProxyServer.lastAccess;
+            if (last < now - (15 * 1000 * 1000)) {
+                restartGroup();
+            }
+        }
     }
 
     public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
@@ -222,15 +240,6 @@ public class WifiDirectService extends Service {
             context.sendBroadcast(intent);
         }
 
-        private void checkRestart() {
-            if (proxyServer == null) return;
-            long now = System.currentTimeMillis();
-            long last = ProxyServer.lastAccess;
-            if (last < now - (15 * 1000 * 1000)) {
-                restartGroup();
-            }
-        }
-
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -265,7 +274,6 @@ public class WifiDirectService extends Service {
                 }
                 case ACTION_GET_STATUS: {
                     sendStatus(context);
-                    checkRestart();
                     break;
                 }
             }
