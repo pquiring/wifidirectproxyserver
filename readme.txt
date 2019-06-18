@@ -1,7 +1,7 @@
 WifiDirect + ProxyServer
 ========================
 
-Share your internet connection.
+Share your Android internet connection.
 
 Creates a WifiDirect group which any Wifi client can connect.
 Also has a proxy server running to proxy web requests.
