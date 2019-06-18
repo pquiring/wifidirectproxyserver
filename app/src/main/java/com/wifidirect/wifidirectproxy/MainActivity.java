@@ -99,7 +99,7 @@ public class MainActivity extends Activity {
             switch (action) {
                 case WifiDirectService.ACTION_SEND_STATUS:
                     status = intent.getStringExtra("status");
-                    if (!running) {
+                    if (!running && !status.equals("Ready")) {
                         running = true;
                         Button button = (Button)findViewById(R.id.button);
                         button.setText("STOP");

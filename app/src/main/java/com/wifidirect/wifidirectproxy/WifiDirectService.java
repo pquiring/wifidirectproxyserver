@@ -112,7 +112,7 @@ public class WifiDirectService extends Service {
             public void onSuccess() {
                 android.util.Log.d("WDPS", "WifiDirectService.createGroup() onSuccess()");
                 setStatus("Create Group (Access Point) successful");
-                createProxy();
+                startProxy();
             }
 
             @Override
@@ -120,7 +120,7 @@ public class WifiDirectService extends Service {
                 android.util.Log.d("WDPS", "WifiDirectService.createGroup() onFailure()");
                 setStatus("Create Group (Access Point) failed\r\nreason=" + reason);
                 //onFailure still works !?!?
-                createProxy();
+                startProxy();
             }
         });
     }
@@ -130,17 +130,6 @@ public class WifiDirectService extends Service {
             manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
-                    if (channel != null) {
-                        channel = null;
-                    }
-                    if (receiver != null) {
-                        try {
-                            unregisterReceiver(receiver);
-                        } catch (Exception e) {
-                            setStatus("Exception:" + e.toString());
-                        }
-                        receiver = null;
-                    }
                     setStatus("Ready");
                 }
 
@@ -154,6 +143,25 @@ public class WifiDirectService extends Service {
         if (channel != null) {
             channel = null;
         }
+        stopProxy();
+    }
+
+    private void restartGroup() {
+        stopGroup();
+        try {Thread.sleep(1000);} catch (Exception e) {}
+        startGroup();
+    }
+
+    private void startProxy() {
+        if (proxyServer == null) {
+            proxyServer = new ProxyServer();
+            proxyServer.start();
+            timer = new java.util.Timer();
+            timer.schedule(new IdleRestarter(), 1000 * 60, 1000 * 60);
+        }
+    }
+
+    private void stopProxy() {
         if (proxyServer != null) {
             proxyServer.close();
             proxyServer = null;
@@ -164,24 +172,13 @@ public class WifiDirectService extends Service {
         }
     }
 
-    private void restartGroup() {
-        stopGroup();
-        try {Thread.sleep(1000);} catch (Exception e) {}
-        startGroup();
-    }
-
-    private void createProxy() {
-        if (proxyServer == null) {
-            proxyServer = new ProxyServer();
-            proxyServer.start();
-            timer = new java.util.Timer();
-            timer.schedule(new IdleRestarter(), 1000 * 60, 1000 * 60);
-        }
-    }
-
     @Override
     public void onDestroy() {
         android.util.Log.d("WDPS", "WifiDirectService.onDestroy()");
+        if (receiver != null) {
+            unregisterReceiver(receiver);
+            receiver = null;
+        }
     }
 
     private void doStop() {
