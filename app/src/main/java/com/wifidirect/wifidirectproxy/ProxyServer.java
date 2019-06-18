@@ -367,7 +367,7 @@ public class ProxyServer extends Thread {
                         //read chunk
                         chunkLength += 2;  // \r\n
                         contentLength += chunkLength;
-                        int read , off = 0;
+                        int read;
                         int bufsiz = chunkLength;
                         if (bufsiz > 4096) bufsiz = 4096;
                         byte buf[] = new byte[bufsiz];
@@ -376,7 +376,6 @@ public class ProxyServer extends Thread {
                             if (read == -1) throw new Exception("read error");
                             if (read > 0) {
                                 chunkLength -= read;
-                                off += read;
                                 pos.write(buf, 0, read);
                             }
                         }
