@@ -29,7 +29,7 @@ public class ProxyServer extends Thread {
     }
 
     public void close() {
-        android.util.Log.d("WDPS", "ProxyServer.close()");
+        android.util.Log.d("JFPS", "ProxyServer.close()");
         try {
             ss.close();
         } catch (Exception e) {}
@@ -42,7 +42,7 @@ public class ProxyServer extends Thread {
     }
 
     public void run() {
-        android.util.Log.d("WDPS", "ProxyServer.run() port=" + port);
+        android.util.Log.d("JFPS", "ProxyServer.run() port=" + port);
         Socket s;
         Session sess;
         //try to bind to port 5 times (in case restart() takes a while)
@@ -50,14 +50,14 @@ public class ProxyServer extends Thread {
             try {
                 ss = new ServerSocket(port);
             } catch (Exception e) {
-                android.util.Log.d("WDPS", "ProxyServer.run() bind Exception=" + e);
+                android.util.Log.d("JFPS", "ProxyServer.run() bind Exception=" + e);
                 if (a == 4) return;
                 try{Thread.sleep(1000);} catch (Exception e2) {}
                 continue;
             }
             break;
         }
-        android.util.Log.d("WDPS", "ProxyServer.run() main loop");
+        android.util.Log.d("JFPS", "ProxyServer.run() main loop");
         try {
             while (!ss.isClosed()) {
                 s = ss.accept();
@@ -65,7 +65,7 @@ public class ProxyServer extends Thread {
                 sess.start();
             }
         } catch (Exception e) {
-            android.util.Log.d("WDPS", "ProxyServer.run() main loop Exception=" + e);
+            android.util.Log.d("JFPS", "ProxyServer.run() main loop Exception=" + e);
             log(e.toString());
         }
     }
@@ -84,7 +84,7 @@ public class ProxyServer extends Thread {
     }
 
     private static void log(String msg) {
-        //TODO
+        android.util.Log.d("JFPS", "ProxyServer:" + msg);
     }
 
     public static byte[] readAll(InputStream in, int len) {
@@ -154,7 +154,7 @@ public class ProxyServer extends Thread {
             return Long.toString(ip64, 16);
         }
         private void log(String s) {
-            android.util.Log.d("WDPS", "ProxyServer:" + client_ip + ":" + client_port + ":" + s);
+            android.util.Log.d("JFPS", "ProxyServer:" + client_ip + ":" + client_port + ":" + s);
         }
         private void log(Exception e) {
             String s = e.toString();
@@ -171,13 +171,12 @@ public class ProxyServer extends Thread {
             lastAccess = System.currentTimeMillis();
             client_port = p.getPort();
             client_ip = p.getInetAddress().getHostAddress();
-            log("Session Start");
+            log("Session Start : count=" + list.size());
             try {
                 pis = p.getInputStream();
                 pos = p.getOutputStream();
                 while (true) {
                     req = "";
-                    log("reading request");
                     do {
                         ch = pis.read();
                         if (ch == -1) throw new Exception("read error");
@@ -186,7 +185,6 @@ public class ProxyServer extends Thread {
                     lastAccess = System.currentTimeMillis();
                     proxy(req);
                     if (disconn) {
-                        log("disconn");
                         break;
                     }
                 }
@@ -195,7 +193,7 @@ public class ProxyServer extends Thread {
                 if (req.length() > 0) log(e);
             }
             close();
-            log("Session Stop");
+            log("Session Stop: count=" + list.size());
         }
         private int getIP(Socket s) {
             if (s.getInetAddress().isLoopbackAddress()) return 0x7f000001;  //loopback may return IP6 address
@@ -348,7 +346,7 @@ public class ProxyServer extends Thread {
                 return;
             }
             if (length == -1) {
-                if (encoding.equals("chunked")) {
+                if (encoding.indexOf("chunked") != -1) {
                     //read chunked format
                     contentLength = 0;
                     while (true) {
@@ -370,16 +368,18 @@ public class ProxyServer extends Thread {
                         chunkLength += 2;  // \r\n
                         contentLength += chunkLength;
                         int read , off = 0;
-                        byte buf[] = new byte[chunkLength];
+                        int bufsiz = chunkLength;
+                        if (bufsiz > 4096) bufsiz = 4096;
+                        byte buf[] = new byte[bufsiz];
                         while (chunkLength != 0) {
-                            read = iis.read(buf, off, chunkLength);
+                            read = iis.read(buf, 0, chunkLength <= 4096 ? chunkLength : bufsiz);
                             if (read == -1) throw new Exception("read error");
                             if (read > 0) {
                                 chunkLength -= read;
                                 off += read;
+                                pos.write(buf, 0, read);
                             }
                         }
-                        pos.write(buf);
                         pos.flush();
                         if (zero) break;
                     }
