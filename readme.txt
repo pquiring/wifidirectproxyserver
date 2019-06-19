@@ -14,5 +14,5 @@ The WifiDirect server is restarted every 15 mins of idle activity to keep it ali
 Author : Peter Quiring
 Email : pquiring@gmail.com
 
-Date : 6/18/2019
-Version : 0.1
+Date : 6/19/2019
+Version : 0.2

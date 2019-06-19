@@ -1,0 +1,7 @@
+6/19/2019 - 0.2
+  - fixed out of memory exception
+  - fixed handling failures
+  - fixed idle restarting
+
+6/18/2019 - 0.1
+  - initial release
