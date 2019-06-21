@@ -7,6 +7,8 @@ package com.wifidirect.wifidirectproxy;
  *
  */
 
+import android.util.Log;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -83,8 +85,28 @@ public class ProxyServer extends Thread {
         return Integer.valueOf(str);
     }
 
+    private static String logfile = "/sdcard/proxyserver.txt";
+    private static FileOutputStream logfos;
     private static void log(String msg) {
-        android.util.Log.d("JFPS", "ProxyServer:" + msg);
+        Log.d("JFPS", msg);
+        try {
+            if (logfos == null) {
+                logfos = new FileOutputStream(logfile);
+            }
+            logfos.write(msg.getBytes());
+            logfos.write("\r\n".getBytes());
+            logfos.flush();
+        } catch (Exception e) {
+            Log.d("JFPS", "Log error:" + e.toString());
+        }
+    }
+    private static void log(Exception e) {
+        String s = e.toString();
+        StackTraceElement stack[] = e.getStackTrace();
+        for(int a=0;a<stack.length;a++) {
+            s += "\r\n" + stack[a].toString();
+        }
+        log(s);
     }
 
     public static byte[] readAll(InputStream in, int len) {
@@ -152,17 +174,6 @@ public class ProxyServer extends Thread {
         public String toString(int ip) {
             long ip64 = ((long)ip) & 0xffffffffL;
             return Long.toString(ip64, 16);
-        }
-        private void log(String s) {
-            android.util.Log.d("JFPS", "ProxyServer:" + client_ip + ":" + client_port + ":" + s);
-        }
-        private void log(Exception e) {
-            String s = e.toString();
-            StackTraceElement stack[] = e.getStackTrace();
-            for(int a=0;a<stack.length;a++) {
-                s += "\r\n" + stack[a].toString();
-            }
-            log(s);
         }
         public void run() {
             String req = "";

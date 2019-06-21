@@ -10,6 +10,9 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.IBinder;
+import android.util.Log;
+
+import java.io.FileOutputStream;
 
 /**
  * An {@link Service} subclass for handling asynchronous task requests in
@@ -35,6 +38,22 @@ public class WifiDirectService extends Service {
 
     private static ProxyServer proxyServer;
     private static java.util.Timer timer;
+
+    private static String logfile = "/sdcard/wifidirect.txt";
+    private static FileOutputStream logfos;
+    private static void log(String msg) {
+        Log.d("WDPS", msg);
+        try {
+            if (logfos == null) {
+                logfos = new FileOutputStream(logfile);
+            }
+            logfos.write(msg.getBytes());
+            logfos.write("\r\n".getBytes());
+            logfos.flush();
+        } catch (Exception e) {
+            Log.d("WDPS", "Log error:" + e.toString());
+        }
+    }
 
     public static boolean isRunning() {
         return manager != null;
@@ -62,7 +81,7 @@ public class WifiDirectService extends Service {
         Intent intent = new Intent();
         intent.setAction(ACTION_GET_STATUS);
         context.sendBroadcast(intent);
-        android.util.Log.d("WDPS", "WifiDirectService.getStatus()");
+        log("WifiDirectService.getStatus()");
     }
 
     public static boolean isBackgroundServiceRunning(Context context, Class<?> service)
@@ -89,7 +108,7 @@ public class WifiDirectService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) return START_STICKY; //???causes crash when exiting???
         String action = intent.getAction();
-        android.util.Log.d("WDPS", "WifiDirectService.onStartCommand() action=" + action);
+        log("WifiDirectService.onStartCommand() action=" + action);
         intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_STOP);
         intentFilter.addAction(ACTION_GET_STATUS);
@@ -110,15 +129,15 @@ public class WifiDirectService extends Service {
         manager.createGroup(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                android.util.Log.d("WDPS", "WifiDirectService.createGroup() onSuccess()");
+                log("WifiDirectService.createGroup() onSuccess()");
                 setStatus("Create Group (Access Point) successful");
                 startProxy();
             }
 
             @Override
             public void onFailure(int reason) {
-                android.util.Log.d("WDPS", "WifiDirectService.createGroup() onFailure()");
-                setStatus("Create Group (Access Point) failed\r\nreason=" + reason);
+                log("WifiDirectService.createGroup() onFailure()");
+                setStatus("Error : Create Group failed\r\nreason=" + reason);
                 //onFailure still works !?!?
                 startProxy();
             }
@@ -135,7 +154,7 @@ public class WifiDirectService extends Service {
 
                 @Override
                 public void onFailure(int i) {
-                    setStatus("removeGroup() failed:reason=" + i);
+                    setStatus("Error : removeGroup() failed:reason=" + i);
                 }
             });
             manager = null;
@@ -163,6 +182,7 @@ public class WifiDirectService extends Service {
 
     private void stopProxy() {
         if (proxyServer != null) {
+            setStatus("Shutting down proxy server...");
             proxyServer.close();
             proxyServer = null;
             if (timer != null) {
@@ -174,7 +194,7 @@ public class WifiDirectService extends Service {
 
     @Override
     public void onDestroy() {
-        android.util.Log.d("WDPS", "WifiDirectService.onDestroy()");
+        log("WifiDirectService.onDestroy()");
         if (receiver != null) {
             unregisterReceiver(receiver);
             receiver = null;
@@ -192,7 +212,7 @@ public class WifiDirectService extends Service {
             if (proxyServer == null) return;
             long now = System.currentTimeMillis();
             long last = ProxyServer.lastAccess;
-            if (last < now - (15 * 1000 * 1000)) {
+            if (last < now - (60 * 1000 * 15)) {
                 restartGroup();
             }
         }
@@ -240,7 +260,7 @@ public class WifiDirectService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            android.util.Log.d("WDPS", "WifiDirectService.onReceive() action=" + action);
+            log("WifiDirectService.onReceive() action=" + action);
 
             switch (action) {
                 case WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION: {
