@@ -11,8 +11,10 @@ The WifiDirect owner uses IP 192.168.49.1 and clients receive IPs in this range.
 
 The WifiDirect server is restarted every 15 mins of idle activity to keep it alive.
 
+Requires Android 6.0+
+
 Author : Peter Quiring
 Email : pquiring@gmail.com
 
-Date : 6/19/2019
-Version : 0.2
+Date : 6/21/2019
+Version : 0.3
