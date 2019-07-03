@@ -16,5 +16,5 @@ Requires Android 6.0+
 Author : Peter Quiring
 Email : pquiring@gmail.com
 
-Date : 6/23/2019
+Date : 7/2/2019
 Version : 0.4

@@ -1,7 +1,7 @@
-6/23/2019 - 0.4
+7/2/2019 - 0.4
   - created timer to restart group
 
-6/21/2019 - 0.3 
+6/21/2019 - 0.3
   - fixed restart group
 
 6/19/2019 - 0.2
